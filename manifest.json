@@ -1,0 +1,6 @@
+{
+  "name": "photocast",
+  "short_name": "photocast",
+  "start_url": "/",
+  "display": "standalone"
+}

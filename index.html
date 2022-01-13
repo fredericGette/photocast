@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>photocast</title>
+    <meta name="description" content="photocast">
+
+    <!-- See https://goo.gl/OOhYW5 -->
+    <link rel="manifest" href="/manifest.json">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
+    <script type="module" src="/src/photocast-app/main.js" crossorigin></script>
+
+    <style>
+        body {
+            height: 100vh; 
+            margin: 0;
+            display: flex;
+            flex-direction: row;
+            border-width: 2px;
+            border-style: solid;
+            border-color:darkred;
+        }
+
+        #commands {
+            display: flex;
+            flex-direction: column;
+            background-color: burlywood;
+        }
+
+        #navigation {
+            display: flex;
+            flex-direction: column;
+            flex:1;
+            border-width: 2px;
+            border-style: solid;
+            border-color: darkorange;
+        }
+
+        #folders {
+            background-color: chartreuse;
+        }
+
+        #photos {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: scroll;
+            background-color: darkgreen;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="commands">
+        <google-cast-launcher style="display: block; width: 100px;"></google-cast-launcher>
+    </div>
+    <div id="navigation">
+        <div id="folders"></div>
+        <div id="photos"></div>
+    </div>
+    
+
+</body>
+</html>

@@ -1,0 +1,385 @@
+<html>
+
+<head>
+  <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js">
+  </script>
+  <style>
+    body {
+      margin: 0;
+      perspective: 1000px;
+      perspective-origin: 100% 0%;
+    }
+
+    canvas {
+      transform-origin: left;
+      transform: rotateY(7deg);
+    }
+
+    /*
+      https://knowpathology.com.au/app/uploads/2018/07/Happy-Test-Screen-01-825x510.png
+      http://192.168.1.17/photos/2005/2005%20egypte/pano_lac_nasser.jpg
+      http://192.168.1.17/photos/2005/2005%20egypte/pano_pilier_edfou.jpg
+      */
+  </style>
+</head>
+
+<body>
+  <canvas id="myContainer" width="1280px" height="720px"></canvas>
+  <script>
+    const CHANNEL = 'urn:x-cast:com.example.namespace';
+    const context = cast.framework.CastReceiverContext.getInstance();
+    const SCREEN_RATIO = 1280 / 720;
+
+    var img = new Image();   // Create new img element
+    var canvas = document.getElementById('myContainer');
+    var ctx = canvas.getContext('2d');
+    var mode = 0;
+    var rotation = 0;
+    var panSpeed = 1;
+    var requestAnim;
+
+    img.addEventListener('error', (event) => {
+      console.log("error:", event);
+      context.sendCustomMessage(CHANNEL, undefined, { "type": "error" });
+    });
+
+    img.addEventListener('load', (event) => {
+      console.log("load:", event);
+      context.sendCustomMessage(CHANNEL, undefined, { "type": "load" });
+      drawImg();
+    });
+
+    img.src="http://192.168.1.17/photos/photocast.png";
+    context.addCustomMessageListener(CHANNEL, event => {
+      console.log('CustomMessage: ', event);
+      console.log('type: ', event.data.type);
+      switch (event.data.type) {
+        case 'CAST_URL':
+          console.log('url: ', event.data.url);   
+          console.log('mode: ', event.data.mode);
+          console.log('rotation: ', event.data.rotation);
+          console.log('panSpeed: ', event.data.panSpeed);
+          mode = event.data.mode;
+          rotation = event.data.rotation;
+          panSpeed = event.data.rotation;
+          img.src = event.data.url;
+          break;
+        case 'CHANGE_DISPLAY':
+          console.log('mode: ', event.data.mode);
+          console.log('rotation: ', event.data.rotation);
+          console.log('panSpeed: ', event.data.panSpeed);
+          mode = event.data.mode;
+          rotation = event.data.rotation;
+          panSpeed = event.data.panSpeed;
+          drawImg();
+          break;
+        case 'CHANGE_PAN_SPEED':
+          console.log('panSpeed: ', event.data.panSpeed);
+          panSpeed = event.data.panSpeed;
+          break;
+      }
+    });
+
+   const options = new cast.framework.CastReceiverOptions();
+   options.disableIdleTimeout = true;
+   cast.framework.CastReceiverContext.getInstance().start(options);
+  
+
+    function drawImg() {
+      // execute drawImage statements
+      window.cancelAnimationFrame(requestAnim);
+      ctx.resetTransform();
+      ctx.clearRect(0, 0, 1280, 720);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, 1280, 720);
+      let img_width = img.width;
+      let img_height = img.height;
+      let img_ratio = img_width / img_height;
+      console.log(SCREEN_RATIO,img_ratio);
+      switch (mode) {
+        case 0:
+          ctx.translate(640, 360);
+          ctx.rotate((Math.PI / 180) * -rotation);
+          switch (rotation) {
+              case 90:
+              case -90:
+                {
+                let scaled_width = 720;
+                let scaled_height = 1280;
+                ctx.translate(-640 / SCREEN_RATIO, -360 * SCREEN_RATIO);
+                ctx.drawImage(img, 0, 0, scaled_width, scaled_height);
+                }
+                break;
+              case 0:
+              case 180:
+              case -180:
+                {
+                let scaled_width = 1280;
+                let scaled_height = 720;
+                ctx.translate(-640, -360);
+                ctx.drawImage(img, 0, 0, scaled_width, scaled_height);
+                }
+              break;
+          }
+          break;
+        case 1:
+          if (img_ratio > SCREEN_RATIO) {
+            ctx.translate(640, 360);
+            ctx.rotate((Math.PI / 180) * -rotation);
+            switch (rotation) {
+              case 90:
+              case -90: 
+                {
+                let ratio = 720 / img_width;  
+                let scaled_width = 720;
+                let scaled_height = img_height * ratio;
+                ctx.translate(-640 / SCREEN_RATIO, -360 * SCREEN_RATIO);
+                ctx.drawImage(img, 0, 640-scaled_height/2, 720, scaled_height);
+                }
+                break;
+              case 0:
+              case 180:
+              case -180:
+                {
+                let ratio = 1280 / img_width;
+                let scaled_width = 1280;
+                let scaled_height = img_height * ratio;
+                ctx.translate(-640, -360);
+                ctx.drawImage(img, 0, 360 - scaled_height / 2, scaled_width, scaled_height);
+                }
+              break;
+            }
+          } else {
+            ctx.translate(640, 360);
+            ctx.rotate((Math.PI / 180) * -rotation);
+            switch (rotation) {
+              case 90:
+              case -90:
+                { 
+                let ratio = 720 / img_width;
+                let scaled_width = 720;
+                let scaled_height = img_height * ratio;
+                ctx.translate(-360 , -640);
+                ctx.drawImage(img, 360 - scaled_width / 2, 640 - scaled_height / 2, scaled_width, scaled_height);
+                }
+                break;
+              case 0:
+              case 180:
+              case -180:
+                {
+                let ratio = 720 / img_height;
+                let scaled_height = 720;
+                let scaled_width = img_width * ratio;
+                ctx.translate(-640, -360);
+                ctx.drawImage(img, 640 - scaled_width / 2, 0, scaled_width, scaled_height);
+                }
+                break;
+            }
+          }
+          break;
+        case 2:
+          if (img_ratio > SCREEN_RATIO) {
+            ctx.translate(640, 360);
+            ctx.rotate((Math.PI / 180) * -rotation);
+            switch (rotation) {
+              case -90:
+                { 
+                let ratio = 1280 / img_height;
+                ctx.translate(-640 / SCREEN_RATIO, -360 * SCREEN_RATIO);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_X_minus_90(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+              case 90:
+                { 
+                let ratio = 1280 / img_height;
+                ctx.translate(-640 / SCREEN_RATIO, -360 * SCREEN_RATIO);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_X_90(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+              case 0:
+                {
+                let ratio = 720 / img_height;
+                ctx.translate(-640, -360);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_X(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+              case 180:
+              case -180:
+                {
+                let ratio = 720 / img_height;
+                ctx.translate(-640, -360);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_X_180(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+            }            
+          } else {
+            ctx.translate(640, 360);
+            ctx.rotate((Math.PI / 180) * -rotation);
+            switch (rotation) {
+              case -90:
+                { 
+                let ratio = 1280 / img_height;
+                ctx.translate(-640 / SCREEN_RATIO, -360 * SCREEN_RATIO);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_X_minus_90(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+              case 90:
+                { 
+                let ratio = 1280 / img_height;
+                ctx.translate(-640 / SCREEN_RATIO, -360 * SCREEN_RATIO);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_X_90(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+              case 0:
+                {
+                let ratio = 1280 / img_width;
+                ctx.translate(-640, -360);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_Y(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+              case 180:
+              case -180:
+                {
+                let ratio = 1280 / img_width;
+                ctx.translate(-640, -360);
+                requestAnim = window.requestAnimationFrame(function (timestamp) {
+                  translate_Y_180(img_width * ratio, img_height * ratio, -1);
+                });
+                }
+                break;
+            }            
+          }
+          break;
+      }
+    }
+    
+
+    function translate_X_minus_90(width, height, dx) {
+      let currentTransform = ctx.getTransform();
+      if (dx == -1 && currentTransform.f < -width + 720) {
+        dx = 1;
+      } else if (dx == 1 && currentTransform.f > 0) {
+        dx = -1;
+      }
+      ctx.translate(dx*panSpeed, 0);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_X_minus_90(width, height, dx);
+      });
+    }
+
+    function translate_X(width, height, dx) {
+      let currentTransform = ctx.getTransform();
+      if (dx == -1 && currentTransform.e < -width + 1280) {
+        dx = 1;
+      } else if (dx == 1 && currentTransform.e > 0) {
+        dx = -1;
+      }
+      ctx.translate(dx*panSpeed, 0);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_X(width, height, dx);
+      });
+    }
+
+    function translate_X_90(width, height, dx) {
+      let currentTransform = ctx.getTransform();
+      if (dx == -1 && currentTransform.f > width) {
+        dx = 1;
+      } else if (dx == 1 && currentTransform.f < 720) {
+        dx = -1;
+      }
+      ctx.translate(dx*panSpeed, 0);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_X_90(width, height, dx);
+      });
+    }
+
+    function translate_X_180(width, height, dx) {
+      let currentTransform = ctx.getTransform();
+      if (dx == -1 && currentTransform.e > width) {
+        dx = 1;
+      } else if (dx == 1 && currentTransform.e < 1280) {
+        dx = -1;
+      }
+      ctx.translate(dx*panSpeed, 0);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_X_180(width, height, dx);
+      });
+    }
+
+    function translate_Y_minus_90(width, height, dy) {
+      let currentTransform = ctx.getTransform();
+      if (dy == -1 && currentTransform.e > height) {
+        dy = 1;
+      } else if (dy == 1 && currentTransform.e < 1280) {
+        dy = -1;
+      }
+      ctx.translate(0, dy*panSpeed);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_Y_minus_90(width, height, dy);
+      });
+    }
+
+    function translate_Y(width, height, dy) {
+      let currentTransform = ctx.getTransform();
+      if (dy == -1 && currentTransform.f < -height + 720) {
+        dy = 1;
+      } else if (dy == 1 && currentTransform.f > 0) {
+        dy = -1;
+      }
+      ctx.translate(0, dy*panSpeed);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_Y(width, height, dy);
+      });
+    }
+
+    function translate_Y_90(width, height, dy) {
+      let currentTransform = ctx.getTransform();
+      if (dy == -1 && currentTransform.e < -height + 1280) {
+        dy = 1;
+      } else if (dy == 1 && currentTransform.e > 0) {
+        dy = -1;
+      }
+      ctx.translate(0, dy*panSpeed);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_Y_90(width, height, dy);
+      });
+    }
+
+    function translate_Y_180(width, height, dy) {
+      let currentTransform = ctx.getTransform();
+      if (dy == -1 && currentTransform.f > height) {
+        dy = 1;
+      } else if (dy == 1 && currentTransform.f < 720) {
+        dy = -1;
+      }
+      ctx.translate(0, dy*panSpeed);
+      ctx.drawImage(img, 0, 0, width, height);
+      requestAnim = window.requestAnimationFrame(function (timestamp) {
+        translate_Y_180(width, height, dy);
+      });
+    }
+  </script>
+</body>
+
+</html>
